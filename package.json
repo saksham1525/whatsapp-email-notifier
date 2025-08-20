@@ -1,0 +1,19 @@
+{
+  "name": "whatsapp-email-notifier",
+  "version": "1.0.0",
+  "description": "Development project for a Twilio Functions (Node.js) webhook that receives WhatsApp commands and returns matching emails via IMAP.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "imapflow": "^1.0.194",
+    "mailparser": "^3.7.4"
+  }
+}
