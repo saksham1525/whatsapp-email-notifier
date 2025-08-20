@@ -2,12 +2,12 @@
 
 const { MessagingResponse } = require("twilio").twiml;
 
-// Load our shared IMAP module. Adjust path if your repo structure differs.
+// Load our shared IMAP module. Fixed path for Railway deployment.
 const { searchEmails, getImapConfigFromEnv } = require("../../serverless/src/imap.js");
 
-// Utility: safe env lookup (Twilio Functions expose env via `context`)
+// Utility: safe env lookup (Twilio Functions expose env via `context`, Railway via process.env)
 function envOrThrow(context, key) {
-  const v = context[key];
+  const v = context[key] || process.env[key];
   if (!v) throw new Error(`Missing env var: ${key}`);
   return v;
 }
