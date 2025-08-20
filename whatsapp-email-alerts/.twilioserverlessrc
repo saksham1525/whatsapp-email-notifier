@@ -7,7 +7,7 @@
 	// "buildSid": null 	/* An existing Build SID to deploy to the new environment */,
 	// "createEnvironment": false 	/* Creates environment if it couldn't find it. */,
 	// "cwd": null 	/* Sets the directory of your existing Serverless project. Defaults to current directory */,
-	// "detailedLogs": false 	/* Toggles detailed request logging by showing request body and query params */,
+	"detailedLogs": true, 	/* Toggles detailed request logging by showing request body and query params */
 	// "edge": null 	/* Twilio API Region */,
 	// "env": null 	/* Path to .env file for environment variables that should be installed */,
 	// "environment": "dev" 	/* The environment name (domain suffix) you want to use for your deployment. Alternatively you can specify an environment SID starting with ZE. */,
@@ -20,12 +20,13 @@
 	// "inspect": null 	/* Enables Node.js debugging protocol */,
 	// "inspectBrk": null 	/* Enables Node.js debugging protocol, stops execution until debugger is attached */,
 	// "legacyMode": false 	/* Enables legacy mode, it will prefix your asset paths with /assets */,
-	// "live": true 	/* Always serve from the current functions (no caching) */,
+	"live": true, 	/* Always serve from the current functions (no caching) */
 	// "loadLocalEnv": false 	/* Includes the local environment variables */,
-	// "loadSystemEnv": false 	/* Uses system environment variables as fallback for variables specified in your .env file. Needs to be used with --env explicitly specified. */,
+	"loadSystemEnv": true, 	/* Uses system environment variables as fallback for variables specified in your .env file. Needs to be used with --env explicitly specified. */
+	"env": ".env" 	/* Load environment variables from .env file */,
 	// "logCacheSize": null 	/* Tailing the log endpoint will cache previously seen entries to avoid duplicates. The cache is topped at a maximum of 1000 by default. This option can change that. */,
 	// "logLevel": "info" 	/* Level of logging messages. */,
-	// "logs": true 	/* Toggles request logging */,
+	"logs": true, 	/* Toggles request logging */
 	// "ngrok": null 	/* Uses ngrok to create a public url. Pass a string to set the subdomain (requires a paid-for ngrok account). */,
 	// "outputFormat": "" 	/* Output the results in a different format */,
 	// "overrideExistingProject": false 	/* Deploys Serverless project to existing service if a naming conflict has been found. */,

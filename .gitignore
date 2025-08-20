@@ -3,7 +3,8 @@
 .env.local
 .env.production
 .env.development
-*.env
+# Allow .env.example to be committed
+!.env.example
 
 # Node.js
 node_modules/

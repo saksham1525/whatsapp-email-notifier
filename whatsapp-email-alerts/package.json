@@ -1,11 +1,13 @@
 {
   "name": "whatsapp-email-alerts",
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Twilio Functions implementation for WhatsApp email notification service",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "twilio-run",
-    "deploy": "twilio-run deploy"
+    "deploy": "twilio-run deploy",
+    "dev": "twilio-run --live",
+    "logs": "twilio-run logs"
   },
   "dependencies": {
     "@twilio/runtime-handler": "2.0.3",
@@ -15,6 +17,6 @@
     "twilio-run": "^4.2.0"
   },
   "engines": {
-    "node": "22"
+    "node": ">=18.0.0"
   }
 }

@@ -5,14 +5,25 @@ const { MessagingResponse } = require("twilio").twiml;
 // Load our shared IMAP module. Fixed path for Railway deployment.
 const { searchEmails, getImapConfigFromEnv } = require("../../serverless/src/imap.js");
 
-// Utility: safe env lookup (Twilio Functions expose env via `context`, Railway via process.env)
-function envOrThrow(context, key) {
-  const v = context[key] || process.env[key];
+/**
+ * Safely retrieve environment variable or throw descriptive error
+ * @param {Object} env - Environment variables object
+ * @param {string} key - Environment variable name
+ * @returns {string} Environment variable value
+ * @throws {Error} If environment variable is missing or empty
+ */
+function envOrThrow(env, key) {
+  const v = env[key];
   if (!v) throw new Error(`Missing env var: ${key}`);
   return v;
 }
 
-// Chunk long text to keep under ~1600 chars (Twilio body limit). :contentReference[oaicite:21]{index=21}
+/**
+ * Split long text into chunks to stay within WhatsApp/Twilio message limits
+ * @param {string} text - Text to split into chunks
+ * @param {number} [max=1400] - Maximum characters per chunk (leaves room for formatting)
+ * @returns {string[]} Array of text chunks
+ */
 function chunkBody(text, max = 1400) { // 1400 to leave headroom for formatting
   const out = [];
   let i = 0;
@@ -23,16 +34,24 @@ function chunkBody(text, max = 1400) { // 1400 to leave headroom for formatting
   return out;
 }
 
+/**
+ * Main Twilio Functions webhook handler for WhatsApp email notifications
+ * Processes WhatsApp commands, searches emails via IMAP, and returns formatted results
+ * @param {Object} context - Twilio Functions runtime context
+ * @param {Object} event - Incoming webhook event data
+ * @param {Function} callback - Twilio Functions callback to return TwiML response
+ */
 exports.handler = async function handler(context, event, callback) {
   try {
-    // Railway native runtime should now inject environment variables properly
+    // Merge Railway environment variables with Twilio context
+    const env = { ...process.env, ...context };
     
     // Twilio sends form-encoded params like Body, From to your webhook. :contentReference[oaicite:22]{index=22}
     const body = (event.Body || "").trim();
     const from = (event.From || "").trim();
 
     // Authorization: allow only numbers in ALLOWED_NUMBERS
-    const allowed = String(envOrThrow(context, "ALLOWED_NUMBERS"))
+    const allowed = String(envOrThrow(env, "ALLOWED_NUMBERS"))
       .split(",")
       .map((s) => s.trim());
     if (!allowed.includes(from)) {
@@ -52,6 +71,7 @@ exports.handler = async function handler(context, event, callback) {
           "ping",
           "check unseen [limit:<n>] [since:<yyyy-mm-dd>]",
           "search from:<text> subject:<text> since:<yyyy-mm-dd> limit:<n>",
+          "latest [limit:<n>]",
         ].join("\n")
       );
       return callback(null, twiml);
@@ -63,19 +83,21 @@ exports.handler = async function handler(context, event, callback) {
       return callback(null, twiml);
     }
 
-    // Parse 'check unseen ...' or 'search ...' (very small grammar)
+    // Parse 'check unseen ...', 'search ...', or 'latest ...' (very small grammar)
     const isCheck = lower.startsWith("check unseen");
     const isSearch = lower.startsWith("search ");
-    if (!isCheck && !isSearch) {
+    const isLatest = lower.startsWith("latest");
+    if (!isCheck && !isSearch && !isLatest) {
       const twiml = new MessagingResponse();
       twiml.message("Unrecognized. Send 'help' for usage.");
       return callback(null, twiml);
     }
 
     // Extract key:value tokens
+    const skipWords = isCheck ? 2 : (isLatest ? 1 : 1); // skip 'check unseen', 'latest', or 'search'
     const tokens = body
       .split(/\s+/)
-      .slice(isCheck ? 2 : 1) // skip 'check unseen' or 'search'
+      .slice(skipWords)
       .join(" ")
       .match(/(\w+):("[^"]+"|\S+)/g) || [];
 
@@ -94,8 +116,16 @@ exports.handler = async function handler(context, event, callback) {
       limit: args.limit ? Number(args.limit) : undefined,
     };
 
+    // For 'latest' command, don't apply any filters except limit
+    if (isLatest) {
+      criteria.unseen = undefined;
+      criteria.since = undefined;
+      criteria.from = undefined;
+      criteria.subject = undefined;
+    }
+
     // Run IMAP search
-    const items = await searchEmails(criteria, getImapConfigFromEnv(context));
+    const items = await searchEmails(criteria, getImapConfigFromEnv(env));
 
     // Format compact lines
     const lines = items.map(
@@ -113,7 +143,7 @@ exports.handler = async function handler(context, event, callback) {
 
     // If extra chunks exist, send them out-of-band using REST after callback()
     const client = context.getTwilioClient(); // Twilio Node SDK in Functions context :contentReference[oaicite:24]{index=24}
-    const fromAddr = envOrThrow(context, "TWILIO_WHATSAPP_FROM");
+    const fromAddr = envOrThrow(env, "TWILIO_WHATSAPP_FROM");
 
     // Fire-and-forget sequentially; if runtime ends early, users will still get the first chunk via TwiML.
     (async () => {

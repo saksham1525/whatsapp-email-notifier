@@ -1,17 +1,36 @@
 {
   "name": "whatsapp-email-notifier",
   "version": "1.0.0",
-  "description": "Development project for a Twilio Functions (Node.js) webhook that receives WhatsApp commands and returns matching emails via IMAP.",
-  "main": "index.js",
+  "description": "A production-ready Twilio Functions webhook that enables WhatsApp users to search and retrieve emails via IMAP",
+  "main": "serverless/src/imap.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "cd whatsapp-email-alerts && npm ci --only=production && npm start",
+    "test": "node scripts/test-imap.js", 
+    "validate": "node scripts/validate-config.js",
+    "dev": "cd whatsapp-email-alerts && npm start",
+    "deploy": "cd whatsapp-email-alerts && npm run deploy",
+    "docker:setup": "./docker-setup.sh setup",
+    "docker:start": "./docker-setup.sh start",
+    "docker:logs": "./docker-setup.sh logs"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "whatsapp",
+    "email",
+    "imap",
+    "twilio",
+    "webhook",
+    "notifications",
+    "nodejs",
+    "serverless"
+  ],
+  "author": "WhatsApp Email Notifier Contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "imapflow": "^1.0.194",
     "mailparser": "^3.7.4"

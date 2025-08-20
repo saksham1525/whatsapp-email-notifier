@@ -1,73 +1,48 @@
-# Use Node.js 22 as specified in the project requirements
+# WhatsApp Email Notifier - Docker Image
 FROM node:22-alpine
 
-# Set working directory
+# Create app directory
 WORKDIR /app
 
-# Install system dependencies that might be needed for native modules
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    git \
-    curl
+# Install system dependencies for better networking and debugging
+RUN apk add --no-cache curl
 
-# Copy package.json files first for better Docker layer caching
+# Copy package files for dependency installation
 COPY package*.json ./
 COPY whatsapp-email-alerts/package*.json ./whatsapp-email-alerts/
 
-# Install dependencies for the main project (updated 2025-08-20)
-RUN npm install --only=production
+# Install dependencies (production only for smaller image)
+RUN npm ci --only=production
 
-# Install dependencies for the Twilio Functions app
-WORKDIR /app/whatsapp-email-alerts
-RUN npm install --only=production
-
-# Switch back to main working directory
-WORKDIR /app
-
-# Copy the entire project
+# Copy application code
 COPY . .
 
-# Create a non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+# Install Twilio Functions dependencies
+WORKDIR /app/whatsapp-email-alerts
+RUN npm ci --only=production
 
-# Change ownership of the app directory to nodejs user
-RUN chown -R nodejs:nodejs /app
-USER nodejs
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && chmod 755 /app/logs
 
-# Expose the port that Twilio Functions will run on
+# Use non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S -u 1001 nodeapp -G nodejs
+    
+# Change ownership of app directory to non-root user
+RUN chown -R nodeapp:nodejs /app
+
+# Switch to non-root user
+USER nodeapp
+
+# Set working directory back to app root
+WORKDIR /app
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Expose port
 EXPOSE 3000
 
-# Runtime environment variables from Railway
-ARG ALLOWED_NUMBERS
-ARG EMAIL_HOST
-ARG EMAIL_PORT
-ARG EMAIL_SECURE
-ARG EMAIL_USER
-ARG EMAIL_PASS
-ARG TWILIO_ACCOUNT_SID
-ARG TWILIO_AUTH_TOKEN
-ARG TWILIO_WHATSAPP_FROM
-ARG DEFAULT_LIMIT
-
-ENV ALLOWED_NUMBERS=$ALLOWED_NUMBERS
-ENV EMAIL_HOST=$EMAIL_HOST
-ENV EMAIL_PORT=$EMAIL_PORT
-ENV EMAIL_SECURE=$EMAIL_SECURE
-ENV EMAIL_USER=$EMAIL_USER
-ENV EMAIL_PASS=$EMAIL_PASS
-ENV TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID
-ENV TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN
-ENV TWILIO_WHATSAPP_FROM=$TWILIO_WHATSAPP_FROM
-ENV DEFAULT_LIMIT=$DEFAULT_LIMIT
-ENV NODE_ENV=production
-
-# Health check (Railway sets PORT env var, default to 3000)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
-
-# Start the Twilio Functions development server
-WORKDIR /app/whatsapp-email-alerts
+# Start the Twilio Functions service
 CMD ["npm", "start"]
