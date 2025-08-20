@@ -25,11 +25,7 @@ function chunkBody(text, max = 1400) { // 1400 to leave headroom for formatting
 
 exports.handler = async function handler(context, event, callback) {
   try {
-    // Railway environment variables workaround - merge process.env into context
-    console.log('RAILWAY DEBUG - process.env keys:', Object.keys(process.env));
-    console.log('RAILWAY DEBUG - ALLOWED_NUMBERS in process.env:', process.env.ALLOWED_NUMBERS);
-    Object.assign(context, process.env);
-    console.log('RAILWAY DEBUG - ALLOWED_NUMBERS in context after merge:', context.ALLOWED_NUMBERS);
+    // Railway environment variables should now be available via Docker ARG/ENV
     
     // Twilio sends form-encoded params like Body, From to your webhook. :contentReference[oaicite:22]{index=22}
     const body = (event.Body || "").trim();
