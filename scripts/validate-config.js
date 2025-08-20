@@ -44,7 +44,7 @@ function validateConfig() {
     {
       key: "TWILIO_ACCOUNT_SID",
       description: "Twilio Account SID",
-      example: "AC1234567890abcdef1234567890abcdef",
+      example: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
       validate: (val) => val.startsWith("AC") && val.length === 34
     },
     {
