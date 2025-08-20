@@ -17,11 +17,11 @@ COPY package*.json ./
 COPY whatsapp-email-alerts/package*.json ./whatsapp-email-alerts/
 
 # Install dependencies for the main project
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Install dependencies for the Twilio Functions app
 WORKDIR /app/whatsapp-email-alerts
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Switch back to main working directory
 WORKDIR /app
@@ -43,9 +43,9 @@ EXPOSE 3000
 # Set environment variables
 ENV NODE_ENV=production
 
-# Health check
+# Health check (Railway sets PORT env var, default to 3000)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 
 # Start the Twilio Functions development server
 WORKDIR /app/whatsapp-email-alerts

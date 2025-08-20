@@ -11,9 +11,7 @@
     "@twilio/runtime-handler": "2.0.3",
     "imapflow": "^1.0.194",
     "mailparser": "^3.7.4",
-    "twilio": "^5.0.3"
-  },
-  "devDependencies": {
+    "twilio": "^5.0.3",
     "twilio-run": "^4.2.0"
   },
   "engines": {
