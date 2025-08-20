@@ -3,7 +3,7 @@
 const { MessagingResponse } = require("twilio").twiml;
 
 // Load our shared IMAP module. Adjust path if your repo structure differs.
-const { searchEmails, getImapConfigFromEnv } = require("../serverless/src/imap.js");
+const { searchEmails, getImapConfigFromEnv } = require("../../serverless/src/imap.js");
 
 // Utility: safe env lookup (Twilio Functions expose env via `context`)
 function envOrThrow(context, key) {
