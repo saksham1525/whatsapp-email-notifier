@@ -25,6 +25,9 @@ function chunkBody(text, max = 1400) { // 1400 to leave headroom for formatting
 
 exports.handler = async function handler(context, event, callback) {
   try {
+    // Railway environment variables workaround - merge process.env into context
+    Object.assign(context, process.env);
+    
     // Twilio sends form-encoded params like Body, From to your webhook. :contentReference[oaicite:22]{index=22}
     const body = (event.Body || "").trim();
     const from = (event.From || "").trim();
