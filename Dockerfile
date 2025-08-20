@@ -16,7 +16,7 @@ RUN apk add --no-cache \
 COPY package*.json ./
 COPY whatsapp-email-alerts/package*.json ./whatsapp-email-alerts/
 
-# Install dependencies for the main project
+# Install dependencies for the main project (updated 2025-08-20)
 RUN npm install --only=production
 
 # Install dependencies for the Twilio Functions app
@@ -42,6 +42,29 @@ EXPOSE 3000
 
 # Set environment variables
 ENV NODE_ENV=production
+
+# Railway environment variables (will be injected at runtime)
+ARG EMAIL_HOST
+ARG EMAIL_PORT
+ARG EMAIL_SECURE
+ARG EMAIL_USER
+ARG EMAIL_PASS
+ARG TWILIO_ACCOUNT_SID
+ARG TWILIO_AUTH_TOKEN
+ARG TWILIO_WHATSAPP_FROM
+ARG ALLOWED_NUMBERS
+ARG DEFAULT_LIMIT
+
+ENV EMAIL_HOST=$EMAIL_HOST
+ENV EMAIL_PORT=$EMAIL_PORT
+ENV EMAIL_SECURE=$EMAIL_SECURE
+ENV EMAIL_USER=$EMAIL_USER
+ENV EMAIL_PASS=$EMAIL_PASS
+ENV TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID
+ENV TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN
+ENV TWILIO_WHATSAPP_FROM=$TWILIO_WHATSAPP_FROM
+ENV ALLOWED_NUMBERS=$ALLOWED_NUMBERS
+ENV DEFAULT_LIMIT=$DEFAULT_LIMIT
 
 # Health check (Railway sets PORT env var, default to 3000)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
