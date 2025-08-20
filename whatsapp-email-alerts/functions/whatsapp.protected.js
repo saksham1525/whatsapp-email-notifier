@@ -25,7 +25,20 @@ function chunkBody(text, max = 1400) { // 1400 to leave headroom for formatting
 
 exports.handler = async function handler(context, event, callback) {
   try {
-    // Railway environment variables should now be available via Docker ARG/ENV
+    // Hardcoded config - Railway env injection not working
+    const config = {
+      ALLOWED_NUMBERS: 'whatsapp:+917973344332',
+      DEFAULT_LIMIT: '5',
+      EMAIL_HOST: 'imap.gmail.com',
+      EMAIL_PASS: 'zhzi bebt zlaa gyxf',
+      EMAIL_PORT: '993',
+      EMAIL_SECURE: 'true',
+      EMAIL_USER: 'saksham1525@gmail.com',
+      TWILIO_ACCOUNT_SID: 'AC0f88cc42d11ac07c4c01c6bf5c044de1',
+      TWILIO_AUTH_TOKEN: '9a7df1810a309a0f04670d4a422b92e0',
+      TWILIO_WHATSAPP_FROM: 'whatsapp:+14155238886'
+    };
+    Object.assign(context, config);
     
     // Twilio sends form-encoded params like Body, From to your webhook. :contentReference[oaicite:22]{index=22}
     const body = (event.Body || "").trim();
