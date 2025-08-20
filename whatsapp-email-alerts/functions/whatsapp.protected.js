@@ -7,8 +7,11 @@ const { searchEmails, getImapConfigFromEnv } = require("../../serverless/src/ima
 
 // Utility: safe env lookup (Twilio Functions expose env via `context`, Railway via process.env)
 function envOrThrow(context, key) {
-  const v = context[key] || process.env[key];
-  if (!v) throw new Error(`Missing env var: ${key}`);
+  const contextVal = context[key];
+  const processVal = process.env[key];
+  console.log(`DEBUG: Looking for ${key} - context: ${contextVal}, process.env: ${processVal}`);
+  const v = contextVal || processVal;
+  if (!v) throw new Error(`Missing env var: ${key}. Available keys: ${Object.keys(process.env).join(', ')}`);
   return v;
 }
 
