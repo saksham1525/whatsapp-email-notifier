@@ -1,18 +1,24 @@
-const { loadEnv } = require("./loadEnv.js");
+/**
+ * IMAP connection test utility
+ * Tests email search functionality with sample criteria
+ */
+
 const { searchEmails } = require("../serverless/src/imap.js");
 
-loadEnv(); // loads .env.local.email
-
 (async () => {
-  const items = await searchEmails({
-    unseen: true,
-    since: "2025-08-01",
-    from: "",          // leave empty to ignore
-    subject: "",       // leave empty to ignore
-    limit: 3,
-  });
-  console.log(JSON.stringify(items, null, 2));
-})().catch((e) => {
-  console.error("IMAP test failed:", e);
-  process.exit(1);
-});
+  console.log("Testing IMAP connection...");
+  
+  try {
+    const emails = await searchEmails({
+      unseen: true,
+      limit: 3
+    });
+    
+    console.log(`SUCCESS: Found ${emails.length} emails`);
+    console.log(JSON.stringify(emails, null, 2));
+    
+  } catch (error) {
+    console.error("ERROR: IMAP test failed:", error.message);
+    process.exit(1);
+  }
+})();

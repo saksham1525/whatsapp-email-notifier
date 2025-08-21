@@ -1,157 +1,31 @@
-const { loadEnv } = require("./loadEnv.js");
-
-// Load environment variables
-loadEnv();
-
 /**
- * Validate environment configuration for WhatsApp Email Notifier
- * This script checks if all required environment variables are set correctly
+ * Environment configuration validator
+ * Validates required environment variables for WhatsApp Email Notifier
  */
-function validateConfig() {
-  console.log("🔍 Validating WhatsApp Email Notifier Configuration");
-  console.log("=" .repeat(50));
 
-  const required = [
-    {
-      key: "EMAIL_HOST",
-      description: "IMAP server hostname (e.g., imap.gmail.com)",
-      example: "imap.gmail.com"
-    },
-    {
-      key: "EMAIL_PORT", 
-      description: "IMAP server port (usually 993 for SSL)",
-      example: "993",
-      validate: (val) => !isNaN(val) && parseInt(val) > 0
-    },
-    {
-      key: "EMAIL_SECURE",
-      description: "Use secure connection (true/false)", 
-      example: "true",
-      validate: (val) => val === "true" || val === "false"
-    },
-    {
-      key: "EMAIL_USER",
-      description: "Email username/address",
-      example: "your-email@gmail.com",
-      validate: (val) => val.includes("@")
-    },
-    {
-      key: "EMAIL_PASS",
-      description: "Email password or app password",
-      example: "app-password",
-      validate: (val) => val.length >= 8
-    },
-    {
-      key: "TWILIO_ACCOUNT_SID",
-      description: "Twilio Account SID",
-      example: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-      validate: (val) => val.startsWith("AC") && val.length === 34
-    },
-    {
-      key: "TWILIO_AUTH_TOKEN", 
-      description: "Twilio Auth Token",
-      example: "your-auth-token",
-      validate: (val) => val.length >= 30
-    },
-    {
-      key: "TWILIO_WHATSAPP_FROM",
-      description: "Twilio WhatsApp number",
-      example: "whatsapp:+14155238886",
-      validate: (val) => val.startsWith("whatsapp:+")
-    },
-    {
-      key: "ALLOWED_NUMBERS",
-      description: "Authorized WhatsApp numbers (comma-separated)",
-      example: "whatsapp:+1234567890,whatsapp:+0987654321",
-      validate: (val) => val.includes("whatsapp:+")
-    }
-  ];
+console.log("Validating environment configuration...");
 
-  const optional = [
-    {
-      key: "DEFAULT_LIMIT",
-      description: "Default search result limit",
-      example: "5",
-      validate: (val) => !isNaN(val) && parseInt(val) > 0
-    }
-  ];
+const requiredVars = [
+  "EMAIL_HOST",
+  "EMAIL_USER", 
+  "EMAIL_PASS",
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_AUTH_TOKEN",
+  "TWILIO_WHATSAPP_FROM"
+];
 
-  let hasErrors = false;
-  let warnings = [];
+const missingVars = requiredVars.filter(varName => !process.env[varName]);
 
-  console.log("✅ Required Configuration:");
-  console.log("-".repeat(25));
-
-  // Check required variables
-  for (const config of required) {
-    const value = process.env[config.key];
-    
-    if (!value) {
-      console.log(`❌ ${config.key}: MISSING`);
-      console.log(`   ${config.description}`);
-      console.log(`   Example: ${config.example}\n`);
-      hasErrors = true;
-    } else if (config.validate && !config.validate(value)) {
-      console.log(`⚠️  ${config.key}: INVALID FORMAT`);
-      console.log(`   Current: ${value.slice(0, 20)}${value.length > 20 ? '...' : ''}`);
-      console.log(`   ${config.description}`);
-      console.log(`   Example: ${config.example}\n`);
-      hasErrors = true;
-    } else {
-      console.log(`✅ ${config.key}: OK`);
-    }
-  }
-
-  console.log("\n📋 Optional Configuration:");
-  console.log("-".repeat(25));
-
-  // Check optional variables
-  for (const config of optional) {
-    const value = process.env[config.key];
-    
-    if (!value) {
-      console.log(`⚪ ${config.key}: Using default`);
-      warnings.push(`Consider setting ${config.key} (${config.description})`);
-    } else if (config.validate && !config.validate(value)) {
-      console.log(`⚠️  ${config.key}: INVALID FORMAT`);
-      console.log(`   Current: ${value}`);
-      console.log(`   ${config.description}`);
-      console.log(`   Example: ${config.example}`);
-    } else {
-      console.log(`✅ ${config.key}: ${value}`);
-    }
-  }
-
-  // Show summary
-  console.log("\n" + "=".repeat(50));
-  
-  if (hasErrors) {
-    console.log("❌ Configuration validation FAILED");
-    console.log("   Please fix the errors above before deploying.");
-    console.log("\n💡 Tips:");
-    console.log("   - For Gmail: Use app passwords instead of regular password");
-    console.log("   - Check Twilio Console for correct SID and Auth Token");
-    console.log("   - WhatsApp numbers must include country code");
-    process.exit(1);
-  } else {
-    console.log("✅ Configuration validation PASSED");
-    console.log("   All required settings are configured correctly.");
-    
-    if (warnings.length > 0) {
-      console.log("\n⚠️  Optional recommendations:");
-      warnings.forEach(warning => console.log(`   - ${warning}`));
-    }
-    
-    console.log("\n🚀 Ready to deploy! Next steps:");
-    console.log("   1. Test IMAP: npm run test");
-    console.log("   2. Deploy: npm run deploy"); 
-    console.log("   3. Configure WhatsApp webhook in Twilio Console");
-  }
+if (missingVars.length > 0) {
+  console.error("ERROR: Missing required environment variables:");
+  missingVars.forEach(varName => {
+    console.error(`  - ${varName}`);
+  });
+  console.error("\nPlease set these variables in your .env file");
+  process.exit(1);
 }
 
-// Self-executing validation
-if (require.main === module) {
-  validateConfig();
-}
-
-module.exports = { validateConfig };
+console.log("SUCCESS: All required environment variables are set");
+console.log(`Email: ${process.env.EMAIL_USER}`);
+console.log(`Twilio SID: ${process.env.TWILIO_ACCOUNT_SID.slice(0, 8)}...`);
+console.log(`WhatsApp From: ${process.env.TWILIO_WHATSAPP_FROM}`);

@@ -6,44 +6,10 @@ services:
     container_name: whatsapp-email-notifier
     ports:
       - "3000:3000"
-    environment:
-      # IMAP Email Configuration
-      - EMAIL_HOST=${EMAIL_HOST:-imap.gmail.com}
-      - EMAIL_PORT=${EMAIL_PORT:-993}
-      - EMAIL_SECURE=${EMAIL_SECURE:-true}
-      - EMAIL_USER=${EMAIL_USER}
-      - EMAIL_PASS=${EMAIL_PASS}
-      
-      # App Configuration
-      - DEFAULT_LIMIT=${DEFAULT_LIMIT:-5}
-      - ALLOWED_NUMBERS=${ALLOWED_NUMBERS}
-      
-      # Twilio Configuration
-      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
-      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
-      - TWILIO_WHATSAPP_FROM=${TWILIO_WHATSAPP_FROM:-whatsapp:+14155238886}
-      
-      # Node Environment
-      - NODE_ENV=production
     env_file:
       - .env
-    volumes:
-      # Mount logs directory for persistence (optional)
-      - ./logs:/app/logs
     restart: unless-stopped
-    networks:
-      - whatsapp-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
-
-networks:
-  whatsapp-network:
-    driver: bridge
-
-volumes:
-  logs:
-    driver: local

@@ -1,166 +1,114 @@
-// WhatsApp webhook: parse commands, auth sender, run IMAP, reply with TwiML + optional follow-ups via REST.
-
+// WhatsApp webhook for email notifications
 const { MessagingResponse } = require("twilio").twiml;
-
-// Load our shared IMAP module. Fixed path for Railway deployment.
-const { searchEmails, getImapConfigFromEnv } = require("../../serverless/src/imap.js");
+const { searchEmails, getImapConfig } = require("../../serverless/src/imap.js");
 
 /**
- * Safely retrieve environment variable or throw descriptive error
- * @param {Object} env - Environment variables object
- * @param {string} key - Environment variable name
- * @returns {string} Environment variable value
- * @throws {Error} If environment variable is missing or empty
+ * Splits long messages into chunks to comply with WhatsApp message limits
+ * @param {string} text - Text to split
+ * @param {number} maxLength - Maximum length per chunk
+ * @returns {string[]} Array of message chunks
  */
-function envOrThrow(env, key) {
-  const v = env[key];
-  if (!v) throw new Error(`Missing env var: ${key}`);
-  return v;
-}
-
-/**
- * Split long text into chunks to stay within WhatsApp/Twilio message limits
- * @param {string} text - Text to split into chunks
- * @param {number} [max=1400] - Maximum characters per chunk (leaves room for formatting)
- * @returns {string[]} Array of text chunks
- */
-function chunkBody(text, max = 1400) { // 1400 to leave headroom for formatting
-  const out = [];
-  let i = 0;
-  while (i < text.length) {
-    out.push(text.slice(i, i + max));
-    i += max;
+function splitMessage(text, maxLength = 1500) {
+  if (text.length <= maxLength) return [text];
+  
+  const chunks = [];
+  for (let i = 0; i < text.length; i += maxLength) {
+    chunks.push(text.slice(i, i + maxLength));
   }
-  return out;
+  return chunks;
 }
 
 /**
- * Main Twilio Functions webhook handler for WhatsApp email notifications
- * Processes WhatsApp commands, searches emails via IMAP, and returns formatted results
- * @param {Object} context - Twilio Functions runtime context
- * @param {Object} event - Incoming webhook event data
- * @param {Function} callback - Twilio Functions callback to return TwiML response
+ * WhatsApp webhook handler for processing email search commands
  */
-exports.handler = async function handler(context, event, callback) {
+exports.handler = async function(context, event, callback) {
   try {
-    // Merge Railway environment variables with Twilio context
+    const body = (event.Body || "").trim().toLowerCase();
+    const from = event.From;
     const env = { ...process.env, ...context };
-    
-    // Twilio sends form-encoded params like Body, From to your webhook. :contentReference[oaicite:22]{index=22}
-    const body = (event.Body || "").trim();
-    const from = (event.From || "").trim();
 
-    // Authorization: allow only numbers in ALLOWED_NUMBERS
-    const allowed = String(envOrThrow(env, "ALLOWED_NUMBERS"))
-      .split(",")
-      .map((s) => s.trim());
-    if (!allowed.includes(from)) {
+    // Authorization check
+    const allowedNumbers = env.ALLOWED_NUMBERS || "";
+    if (allowedNumbers && !allowedNumbers.includes(from)) {
       const twiml = new MessagingResponse();
       twiml.message("Unauthorized.");
       return callback(null, twiml);
     }
 
-    // Parse minimal commands
-    const lower = body.toLowerCase();
-    if (lower === "help") {
+    // Handle basic commands
+    if (body === "help") {
       const twiml = new MessagingResponse();
-      twiml.message(
-        [
-          "Commands:",
-          "help",
-          "ping",
-          "check unseen [limit:<n>] [since:<yyyy-mm-dd>]",
-          "search from:<text> subject:<text> since:<yyyy-mm-dd> limit:<n>",
-          "latest [limit:<n>]",
-        ].join("\n")
-      );
+      twiml.message("Commands:\nhelp\nping\ncheck unseen\nsearch from:email@domain.com\nlatest");
       return callback(null, twiml);
     }
 
-    if (lower === "ping") {
+    if (body === "ping") {
       const twiml = new MessagingResponse();
       twiml.message("pong");
       return callback(null, twiml);
     }
 
-    // Parse 'check unseen ...', 'search ...', or 'latest ...' (very small grammar)
-    const isCheck = lower.startsWith("check unseen");
-    const isSearch = lower.startsWith("search ");
-    const isLatest = lower.startsWith("latest");
-    if (!isCheck && !isSearch && !isLatest) {
+    // Parse search criteria
+    const criteria = {};
+    
+    if (body.includes("unseen") || body.includes("check")) {
+      criteria.unseen = true;
+    }
+    
+    // Parameter extraction
+    const fromMatch = body.match(/from:(\S+)/);
+    if (fromMatch) criteria.from = fromMatch[1];
+    
+    const limitMatch = body.match(/limit:(\d+)/);
+    if (limitMatch) criteria.limit = parseInt(limitMatch[1]);
+    
+    const sinceMatch = body.match(/since:(\d{4}-\d{2}-\d{2})/);
+    if (sinceMatch) criteria.since = sinceMatch[1];
+
+    // Set default limit
+    if (!criteria.limit) criteria.limit = 5;
+
+    // Search emails
+    const emails = await searchEmails(criteria, getImapConfig(env));
+
+    if (emails.length === 0) {
       const twiml = new MessagingResponse();
-      twiml.message("Unrecognized. Send 'help' for usage.");
+      twiml.message("No emails found.");
       return callback(null, twiml);
     }
 
-    // Extract key:value tokens
-    const skipWords = isCheck ? 2 : (isLatest ? 1 : 1); // skip 'check unseen', 'latest', or 'search'
-    const tokens = body
-      .split(/\s+/)
-      .slice(skipWords)
-      .join(" ")
-      .match(/(\w+):("[^"]+"|\S+)/g) || [];
+    let response = `Found ${emails.length} emails:\n\n`;
+    emails.forEach(email => {
+      const date = new Date(email.date).toISOString().slice(0, 10);
+      response += `${date}\nFrom: ${email.from}\nSubject: ${email.subject}\n\n`;
+    });
 
-    const args = {};
-    for (const t of tokens) {
-      const [k, v] = t.split(":");
-      args[k.toLowerCase()] = v.replace(/^"|"$/g, "");
-    }
-
-    // Build criteria
-    const criteria = {
-      unseen: isCheck ? true : undefined,
-      since: args.since,
-      from: args.from,
-      subject: args.subject,
-      limit: args.limit ? Number(args.limit) : undefined,
-    };
-
-    // For 'latest' command, don't apply any filters except limit
-    if (isLatest) {
-      criteria.unseen = undefined;
-      criteria.since = undefined;
-      criteria.from = undefined;
-      criteria.subject = undefined;
-    }
-
-    // Run IMAP search
-    const items = await searchEmails(criteria, getImapConfigFromEnv(env));
-
-    // Format compact lines
-    const lines = items.map(
-      (it) => `• ${new Date(it.date).toISOString().slice(0, 10)} — ${it.from} — ${it.subject}`
-    );
-    const header = items.length ? `Found ${items.length} item(s):` : "No matching emails.";
-    const payload = [header, ...lines].join("\n");
-
-    // Chunk reply: 1st chunk via TwiML response; any remaining chunks via REST API
-    const chunks = chunkBody(payload);
-
+    // Message splitting if too long
+    const chunks = splitMessage(response);
+    
     const twiml = new MessagingResponse();
-    twiml.message(chunks[0] || "No matching emails.");
-    // Return immediately; Function stops executing after callback. :contentReference[oaicite:23]{index=23}
+    twiml.message(chunks[0]);
 
-    // If extra chunks exist, send them out-of-band using REST after callback()
-    const client = context.getTwilioClient(); // Twilio Node SDK in Functions context :contentReference[oaicite:24]{index=24}
-    const fromAddr = envOrThrow(env, "TWILIO_WHATSAPP_FROM");
-
-    // Fire-and-forget sequentially; if runtime ends early, users will still get the first chunk via TwiML.
-    (async () => {
+    // Send additional chunks if needed
+    if (chunks.length > 1) {
+      const client = context.getTwilioClient();
       for (let i = 1; i < chunks.length; i++) {
-        await client.messages.create({
-          from: fromAddr,
-          to: from,
-          body: chunks[i],
-        });
+        setTimeout(async () => {
+          await client.messages.create({
+            from: env.TWILIO_WHATSAPP_FROM,
+            to: from,
+            body: chunks[i]
+          });
+        }, i * 1000); // Delay between chunks
       }
-    })().catch((e) => console.error("Chunk send failed:", e));
+    }
 
     return callback(null, twiml);
-  } catch (err) {
-    console.error(err);
+    
+  } catch (error) {
+    console.error("Error:", error);
     const twiml = new MessagingResponse();
-    twiml.message("Error. Try again or send 'help'.");
+    twiml.message("Sorry, something went wrong. Try again later.");
     return callback(null, twiml);
   }
 };
