@@ -3,7 +3,7 @@
  * Tests email search functionality with sample criteria
  */
 
-const { searchEmails } = require("../serverless/src/imap.js");
+const { searchEmails } = require("../serverless/imap.js");
 
 (async () => {
   console.log("Testing IMAP connection...");

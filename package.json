@@ -2,7 +2,7 @@
   "name": "whatsapp-email-notifier",
   "version": "1.0.0",
   "description": "WhatsApp email alerts using Twilio and IMAP",
-  "main": "serverless/src/imap.js",
+  "main": "serverless/imap.js",
   "scripts": {
     "start": "cd whatsapp-email-alerts && npm start",
     "test": "node scripts/test-imap.js",

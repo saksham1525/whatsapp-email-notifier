@@ -1,6 +1,6 @@
 // WhatsApp webhook for email notifications
 const { MessagingResponse } = require("twilio").twiml;
-const { searchEmails, getImapConfig } = require("../../serverless/src/imap.js");
+const { searchEmails, getImapConfig } = require("../../serverless/imap.js");
 
 /**
  * Splits long messages into chunks to comply with WhatsApp message limits
