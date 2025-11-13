@@ -1,4 +1,5 @@
 const twilio = require('twilio');
+require('dotenv').config();
 
 class WhatsAppService {
     constructor() {

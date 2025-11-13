@@ -1,4 +1,5 @@
 const imaps = require('imap-simple');
+require('dotenv').config();
 
 class EmailService {
     constructor() {
@@ -10,8 +11,7 @@ class EmailService {
                 port: parseInt(process.env.EMAIL_PORT) || 993,
                 tls: true,
                 authTimeout: 10000,
-                tlsOptions: { rejectUnauthorized: false },
-                authMethods: ['PLAIN', 'LOGIN', 'XOAUTH2'] // Authentication methods
+                tlsOptions: { rejectUnauthorized: false }
             }
         };
     }
