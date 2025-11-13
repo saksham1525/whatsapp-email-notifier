@@ -1,6 +1,6 @@
 # WhatsApp Email Notifier
 
-A WhatsApp bot that connects Gmail (IMAP) with Twilio WhatsApp to provide email summaries on-demand via WhatsApp commands.
+A Node.js Express application that connects Gmail (IMAP) with Twilio WhatsApp to provide email summaries on-demand via WhatsApp commands and REST API.
 
 ## Setup
 
@@ -118,6 +118,7 @@ curl https://your-railway-url.up.railway.app/health
 
 ### WhatsApp Integration
 
+- Express.js webhook endpoint for Twilio
 - Receive commands via WhatsApp
 - Send formatted email summaries
 - Authorization checks for security
@@ -127,6 +128,49 @@ curl https://your-railway-url.up.railway.app/health
 - IMAP connection failures
 - Unauthorized access blocking
 - Invalid command responses
+
+## REST API
+
+Express.js REST API endpoint for programmatic access to your emails.
+
+### GET /api/emails
+
+Fetch unread emails via REST API.
+
+**Authentication:** Optional API key (set `API_KEY` in `.env`)
+
+**Request:**
+
+```bash
+# With API key in header (recommended)
+curl -H "x-api-key: your-secret-api-key" \
+  https://your-app.up.railway.app/api/emails
+
+# With API key in query parameter
+curl "https://your-app.up.railway.app/api/emails?api_key=your-secret-api-key"
+
+# Without API key (if API_KEY not set in environment)
+curl https://your-app.up.railway.app/api/emails
+```
+
+**Response:**
+
+```json
+{
+    "success": true,
+    "data": "Found 2 unread email(s):\n\n1.  From: boss@company.com\n    Subject: Meeting Tomorrow\n    Date: 11/13/2024\n\n2.  From: client@example.com\n    Subject: Project Update\n    Date: 11/13/2024",
+    "timestamp": "2024-11-13T22:30:00.000Z"
+}
+```
+
+**Error Response:**
+
+```json
+{
+    "success": false,
+    "error": "Unauthorized - Invalid or missing API key"
+}
+```
 
 ## Available Commands
 

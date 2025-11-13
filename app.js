@@ -18,6 +18,35 @@ webApp.get('/health', (req, res) => {
     res.json({ ok: true, service: 'whatsapp-email-notifier', version: '2.0.0' });
 });
 
+// REST API endpoint to fetch unread emails
+webApp.get('/api/emails', async (req, res) => {
+    try {
+        // API key authentication (optional but recommended)
+        const apiKey = req.headers['x-api-key'] || req.query.api_key;
+        if (process.env.API_KEY && apiKey !== process.env.API_KEY) {
+            return res.status(401).json({
+                success: false,
+                error: 'Unauthorized - Invalid or missing API key'
+            });
+        }
+
+        // Fetch unread emails
+        const emails = await emailService.fetchUnreadEmails();
+
+        res.json({
+            success: true,
+            data: emails,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('API error fetching emails:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to fetch emails'
+        });
+    }
+});
+
 webApp.post('/whatsapp', async (req, res) => {
     // Route for WhatsApp webhook
     try {
