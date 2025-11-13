@@ -4,6 +4,8 @@ A WhatsApp bot that connects Gmail (IMAP) with Twilio WhatsApp to provide email 
 
 ## Setup
 
+**Requirements:** Node.js >= 20.17.0
+
 ### 1. Install Dependencies
 ```bash
 npm install
@@ -39,7 +41,23 @@ npm run validate
 npm test
 ```
 
-### 7. Railway Deployment
+### 7. Local Testing (Optional)
+For local webhook testing without deploying:
+
+```bash
+# Install ngrok
+npm install -g ngrok
+
+# Start your app
+npm start
+
+# In another terminal, expose localhost
+ngrok http 3000
+```
+
+Ngrok creates a public URL for your localhost, allowing Twilio to send webhooks to your local machine. Use the ngrok URL (e.g., `https://abc123.ngrok.io/whatsapp`) in Twilio webhook settings.
+
+### 8. Railway Deployment
 ```bash
 # Install Railway CLI
 sudo npm install -g @railway/cli
@@ -58,9 +76,12 @@ railway variables set EMAIL_PASS=your-app-password
 railway domain
 ```
 
-**Note:** Railway automatically runs `npm start` to launch your application after deployment.
+**Deployment Notes:**
+- Railway automatically deploys on every push to `main` branch (if connected to GitHub)
+- Runs `npm start` to launch the application
+- Environment variables must be set in Railway dashboard or CLI
 
-### 8. Verify Deployment
+### 9. Verify Deployment
 ```bash
 # Health check
 curl https://your-railway-url.up.railway.app/health
@@ -69,7 +90,7 @@ curl https://your-railway-url.up.railway.app/health
 {"ok":true,"service":"whatsapp-email-notifier","version":"2.0.0"}
 ```
 
-### 9. Configure Twilio Webhook
+### 10. Configure Twilio Webhook
 1. Go to Twilio Console → WhatsApp Sandbox
 2. Set webhook URL to: `https://your-railway-url.up.railway.app/whatsapp`
 3. Save configuration
@@ -131,7 +152,7 @@ The project includes comprehensive Jest tests:
 **Integration Tests** (Real APIs)
 - Tests actual Gmail IMAP connection
 - Tests actual Twilio WhatsApp messaging
-- **Warning:** Makes real API calls
+- **Warning:** Makes real API calls (skipped by default - remove `.skip` in test file to run)
 
 ### Running Tests
 ```bash
@@ -141,6 +162,24 @@ npm test
 # Run health check with real APIs
 npm run health
 ```
+
+### Code Quality & CI/CD
+
+**Pre-commit Hooks**
+On every commit, Prettier and ESLint automatically format and lint your code.
+
+**GitHub Actions CI/CD**
+Runs on every push and pull request:
+- Code formatting check
+- Linting
+- Full test suite
+- Railway auto-deploys on merge to `main` (when connected to GitHub)
+
+### Test Execution Order
+Tests run in optimized sequence:
+1. Unit tests (environment, email, WhatsApp)
+2. Mocked integration tests (full pipeline)
+3. Real API integration tests
 
 ## Performance Notes
 - IMAP connections are efficiently managed

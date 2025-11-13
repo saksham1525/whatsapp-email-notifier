@@ -1,0 +1,55 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Check code formatting
+      run: npx prettier --check .
+    
+    - name: Run linter
+      run: npm run lint
+    
+    - name: Run tests
+      run: npm test
+      env:
+        EMAIL_USER: test@example.com
+        EMAIL_PASS: testpass
+        TWILIO_ACCOUNT_SID: test_sid
+        TWILIO_AUTH_TOKEN: test_token
+        TWILIO_WHATSAPP_FROM: whatsapp:+1234567890
+        ALLOWED_NUMBERS: whatsapp:+1111111111
+    
+    - name: Validate configuration script
+      run: npm run validate
+      continue-on-error: true
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to Railway
+      run: echo "Deploy step - configure Railway CLI if needed"
+
