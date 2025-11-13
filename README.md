@@ -2,17 +2,6 @@
 
 A WhatsApp bot that connects Gmail (IMAP) with Twilio WhatsApp to provide email summaries on-demand via WhatsApp commands.
 
-## Architecture
-
-```
-├── app.js                    # Main Express server & webhook handler
-├── services/
-│   ├── emailService.js      # IMAP email fetching (Gmail connection)
-│   └── whatsappService.js   # Twilio WhatsApp messaging
-├── .env                     # Environment variables
-└── package.json             # Dependencies and scripts
-```
-
 ## Setup
 
 ### 1. Install Dependencies
@@ -45,7 +34,12 @@ Copy `.env.example` to `.env` and configure with your credentials.
 npm run validate
 ```
 
-### 6. Railway Deployment
+### 6. Run Tests
+```bash
+npm test
+```
+
+### 7. Railway Deployment
 ```bash
 # Install Railway CLI
 sudo npm install -g @railway/cli
@@ -58,7 +52,7 @@ railway up
 # Set environment variables
 railway variables set EMAIL_USER=your-email@gmail.com
 railway variables set EMAIL_PASS=your-app-password
-# ... set all other variables
+# ...
 
 # Get your deployment URL
 railway domain
@@ -66,7 +60,7 @@ railway domain
 
 **Note:** Railway automatically runs `npm start` to launch your application after deployment.
 
-### 7. Verify Deployment
+### 8. Verify Deployment
 ```bash
 # Health check
 curl https://your-railway-url.up.railway.app/health
@@ -75,7 +69,7 @@ curl https://your-railway-url.up.railway.app/health
 {"ok":true,"service":"whatsapp-email-notifier","version":"2.0.0"}
 ```
 
-### 8. Configure Twilio Webhook
+### 9. Configure Twilio Webhook
 1. Go to Twilio Console → WhatsApp Sandbox
 2. Set webhook URL to: `https://your-railway-url.up.railway.app/whatsapp`
 3. Save configuration
@@ -118,6 +112,34 @@ Bot: Found 3 unread email(s):
 1.  From: boss@company.com
     Subject: Quarterly Review
     Date: 9/2/2024
+```
+
+## Testing
+
+### Test Suite
+The project includes comprehensive Jest tests:
+
+**Unit Tests** (Fast, mocked)
+- Environment variable validation
+- Email parsing logic
+- WhatsApp service functionality
+
+**Integration Tests** (Mocked APIs)
+- Full pipeline: Environment → Email → WhatsApp
+- No external API calls (cost-free)
+
+**Integration Tests** (Real APIs)
+- Tests actual Gmail IMAP connection
+- Tests actual Twilio WhatsApp messaging
+- **Warning:** Makes real API calls
+
+### Running Tests
+```bash
+# Run all tests
+npm test
+
+# Run health check with real APIs
+npm run health
 ```
 
 ## Performance Notes
