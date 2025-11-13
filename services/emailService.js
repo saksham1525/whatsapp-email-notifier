@@ -57,9 +57,14 @@ class EmailService {
                 return 'No unread emails found.';
             }
 
-            let display = `Found ${messages.length} unread email(s):\n\n`;
+            const limitedMessages = messages.slice(0, limit); // Only display first 5
+            let display = `Found ${messages.length} unread email(s):\n`;
+            if (messages.length > limit) {
+                display += `(Showing first ${limit})\n`;
+            }
+            display += `\n`;
             
-            messages.forEach((message, index) => {
+            limitedMessages.forEach((message, index) => {
                 const emailInfo = this.extractEmailInfo(message);
                 if (emailInfo) {
                     display += `${index + 1}.  From: ${emailInfo.from}\n`;
