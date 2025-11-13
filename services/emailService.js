@@ -29,13 +29,15 @@ class EmailService {
     }
 
     extractEmailInfo(message) {
-        const header = message.parts?.find(part => part.which === 'HEADER');
+        const header = message.parts?.find((part) => part.which === 'HEADER');
         if (!header?.body) return null;
 
         return {
             subject: header.body.subject?.[0] || '(No Subject)',
             from: header.body.from?.[0] || '(Unknown Sender)',
-            date: header.body.date ? new Date(header.body.date[0]).toLocaleDateString() : '(No Date)'
+            date: header.body.date
+                ? new Date(header.body.date[0]).toLocaleDateString()
+                : '(No Date)'
         };
     }
 
@@ -43,7 +45,7 @@ class EmailService {
         try {
             const connection = await this.connect();
             await connection.openBox('INBOX');
-            
+
             const searchCriteria = ['UNSEEN'];
             const fetchOptions = {
                 bodies: ['HEADER'],
@@ -51,7 +53,7 @@ class EmailService {
             };
 
             const messages = await connection.search(searchCriteria, fetchOptions);
-            
+
             if (messages.length === 0) {
                 connection.end();
                 return 'No unread emails found.';
@@ -63,7 +65,7 @@ class EmailService {
                 display += `(Showing first ${limit})\n`;
             }
             display += `\n`;
-            
+
             limitedMessages.forEach((message, index) => {
                 const emailInfo = this.extractEmailInfo(message);
                 if (emailInfo) {
@@ -76,14 +78,13 @@ class EmailService {
             });
 
             connection.end();
-            
+
             const maxLength = 1500; // WhatsApp message limit
             if (display.length > maxLength) {
                 display = display.slice(0, maxLength - 3) + '...';
             }
-            
-            return display;
 
+            return display;
         } catch (error) {
             console.error('Error fetching unread emails:', error);
             return 'Error fetching emails. Please try again later.';
